@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ASHENGATE ASYLUM - 3D Horror Survival Game</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Courier New', Courier, monospace;
+            color: #d1d1d1;
+            touch-action: none;
+            overscroll-behavior: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        /* Fullscreen Screen Styles */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            background-color: rgba(5, 5, 5, 1.0);
+            transition: opacity 0.5s ease;
+            padding: 20px;
+            text-align: center;
+        }
+        .hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        /* Loading Screen Specifics */
+        #loading-screen h2 {
+            color: #8b0000;
+            letter-spacing: 4px;
+            font-size: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Main Menu Specifics */
+        #menu-screen h1 {
+            font-size: 3.5rem;
+            color: #8b0000;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.7), 2px 2px 5px #000;
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+            animation: flicker 3s infinite;
+        }
+        .btn {
+            background: linear-gradient(180deg, #1a0000, #0a0000);
+            border: 1px solid #5a0000;
+            color: #b0b0b0;
+            padding: 18px 40px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            cursor: pointer;
+            margin: 12px;
+            min-width: 260px;
+            min-height: 58px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+            transition: all 0.2s ease;
+        }
+        .btn:hover {
+            color: #ff3333;
+            border-color: #ff3333;
+            box-shadow: 0 0 12px rgba(255, 51, 51, 0.4);
+            transform: scale(1.03);
+        }
+        .btn:active {
+            color: #ff3333;
+            border-color: #ff3333;
+            box-shadow: 0 0 12px rgba(255, 51, 51, 0.4);
+            transform: scale(0.97);
+        }
+        /* Content Overlay */
+        .panel {
+            background-color: rgba(15, 5, 5, 0.95);
+            border: 1px solid #401010;
+            padding: 25px;
+            max-width: 600px;
+            margin-top: 20px;
+            border-radius: 4px;
+            text-align: left;
+            line-height: 1.6;
+        }
+        .panel h2 {
+            color: #8b0000;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #401010;
+            padding-bottom: 5px;
+        }
+        .panel ul {
+            list-style-type: square;
+            padding-left: 20px;
+        }
+        /* Intro Screen */
+        #intro-screen p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            line-height: 1.8;
+            margin-bottom: 40px;
+            color: #c0c0c0;
+        }
+        /* HUD Display */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .hud-metric {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid #222;
+            padding: 10px 15px;
+            border-radius: 3px;
+            min-width: 160px;
+        }
+        .hud-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            color: #888;
+        }
+        .bar-container {
+            width: 100%;
+            height: 10px;
+            background-color: #220000;
+            border: 1px solid #444;
+            margin-top: 4px;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+        #sanity-fill { background-color: #3a86c8; }
+        #battery-fill { background-color: #c49a2a; }
+        #stamina-fill { background-color: #298a43; }
+        
+        #notes-counter {
+            font-size: 1.5rem;
+            color: #8b0000;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            align-self: center;
+        }
+        /* Prompts and Overlays */
+        #prompt-center {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: #fff;
+            text-shadow: 0 0 4px #000, 0 0 8px #8b0000;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 3px;
+        }
+        
+        #notification-area {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            color: #4CAF50;
+            font-weight: bold;
+            text-shadow: 0 0 10px #000, 2px 2px 2px #000;
+            z-index: 100;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background-color: rgba(255,255,255,0.4);
+            border-radius: 50%;
+        }
+        #story-popup {
+            position: absolute;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 750px;
+            z-index: 7;
+            background: rgba(10, 3, 3, 0.92);
+            border-left: 4px solid #8b0000;
+            border-right: 1px solid #331111;
+            border-top: 1px solid #331111;
+            border-bottom: 1px solid #331111;
+            padding: 20px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #e0e0e0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+        #story-popup .close-hint {
+            display: block;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #777;
+            text-align: right;
+        }
+        /* Vignette and Sanity Distortions */
+        #vignette-overlay {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            pointer-events: none;
+            z-index: 4;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.92);
+            transition: box-shadow 0.3s ease;
+        }
+        #jumpscare-overlay {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            pointer-events: none;
+            z-index: 20;
+            background-color: #ff0000;
+            opacity: 0;
+            display: none;
+        }
+        /* Ending and Controls Blocker Screen */
+        #blocker {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.75);
+            z-index: 8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #ff3333;
+            letter-spacing: 2px;
+        }
+        #ending-title {
+            font-size: 2.8rem;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+        .good-end { color: #298a43; text-shadow: 0 0 10px rgba(41,138,67,0.5); }
+        .bad-end { color: #8b0000; text-shadow: 0 0 10px rgba(139,0,0,0.6); }
+        
+        #ending-text {
+            max-width: 650px;
+            font-size: 1.15rem;
+            line-height: 1.7;
+            margin-bottom: 25px;
+            color: #b8b8b8;
+        }
+
+        /* Credits di layar akhir */
+        #ending-credits {
+            margin-bottom: 35px;
+            font-size: 0.95rem;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        /* --- TOUCH CONTROLS (menggantikan keyboard + mouse) --- */
+        #touch-controls {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            touch-action: none;
+            z-index: 6;
+        }
+        #look-zone {
+            position: absolute;
+            top: 0; right: 0;
+            width: 55%; height: 100%;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #joystick-zone {
+            position: absolute;
+            left: 12px; bottom: 12px;
+            width: 170px; height: 170px;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        #joystick-base {
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 130px; height: 130px;
+            margin-left: -65px; margin-top: -65px;
+            border-radius: 50%;
+            background: rgba(90, 90, 90, 0.16);
+            border: 2px solid rgba(200, 200, 200, 0.35);
+        }
+        #joystick-stick {
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            background: rgba(200, 200, 200, 0.28);
+            border: 2px solid rgba(230, 230, 230, 0.55);
+            transform: translate(-50%, -50%);
+        }
+        .touch-btn {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(30, 30, 30, 0.38);
+            border: 2px solid rgba(210, 210, 210, 0.45);
+            color: #cfcfcf;
+            font-family: inherit;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            pointer-events: auto;
+            touch-action: none;
+        }
+        .touch-btn.pressed {
+            background: rgba(139, 0, 0, 0.45);
+            border-color: #ff3333;
+            color: #fff;
+        }
+        #btn-flashlight {
+            width: 74px; height: 74px;
+            right: 22px; bottom: 132px;
+        }
+        #btn-interact {
+            width: 98px; height: 98px;
+            right: 118px; bottom: 24px;
+        }
+        #btn-sprint {
+            width: 80px; height: 80px;
+            right: 22px; bottom: 24px;
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.7; color: #4a0000; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="vignette-overlay"></div>
+    <div id="jumpscare-overlay"></div>
+
+    <div id="loading-screen" class="screen">
+        <img src="logo.png" alt="Logo Game" style="max-width: 300px; margin-bottom: 30px;">
+        <h2>LOADING...</h2>
+    </div>
+
+    <div id="menu-screen" class="screen hidden">
+        <h1>ASHENGATE ASYLUM</h1>
+        <button class="btn" id="btn-start">MULAI GAME</button>
+        <button class="btn" id="btn-how">CARA BERMAIN</button>
+        <button class="btn" id="btn-credits">KREDIT</button>
+
+        <div id="panel-how" class="panel hidden">
+            <h2>Kontrol Permainan</h2>
+            <ul>
+                <li><strong>Joystick (kiri bawah)</strong> : Bergerak menjelajahi asylum</li>
+                <li><strong>Geser jari di layar kanan</strong> : Mengarahkan pandangan kamera</li>
+                <li><strong>Tombol LARI (tahan)</strong> : Berlari cepat (Menguras Stamina)</li>
+                <li><strong>Tombol SENTER</strong> : Menyalakan / mematikan Senter</li>
+                <li><strong>Tombol AKSI</strong> : Interaksi (Ambil Catatan/Baterai, Masuk/Keluar Loker)</li>
+            </ul>
+        </div>
+
+        <div id="panel-credits" class="panel hidden">
+            <h2>Kredit Pengembang</h2>
+            <p>Game oleh Edward Bruce Wayne (Cuman nama samaran btw) inisial asli MRF</p>
+            <p style="margin-top:10px;">Terima kasih kepada Claude dan Gemini yang telah membantu pengembangan game ini</p>
+            <p style="margin-top:10px;">Sampai nanti di game berikutnya!</p>
+        </div>
+    </div>
+
+    <div id="intro-screen" class="screen hidden">
+        <p>
+            Yorkshire, 1998. Adikmu, Emily, menghilang setelah memasuki reruntuhan Ashengate Asylum untuk meliput dokumenter kelam tempat ini.<br><br>
+            Kamu memutuskan menyusulnya masuk ke dalam gedung tua yang basah dan pengap ini. Tiba-tiba, dentuman keras terdengar di belakangmu... pintu masuk utama terkunci rapat otomatis.<br><br>
+            Kamu terjebak di kegelapan, dan sesuatu yang mengerikan mulai terbangun dari tidurnya...
+        </p>
+        <button class="btn" id="btn-intro-continue">LANJUTKAN</button>
+    </div>
+
+    <div id="blocker" class="hidden">KURSOR TERLEPAS. KLIK LAYAR UNTUK MELANJUTKAN.</div>
+
+    <div id="hud" class="hidden">
+        <div class="hud-top">
+            <div class="hud-metric">
+                <div class="hud-label">Kewarasan (Sanity)</div>
+                <div class="bar-container"><div id="sanity-fill" class="bar-fill"></div></div>
+            </div>
+            <div id="notes-counter">Catatan: 0 / 3</div>
+            <div class="hud-metric">
+                <div class="hud-label">Baterai Senter</div>
+                <div class="bar-container"><div id="battery-fill" class="bar-fill"></div></div>
+            </div>
+        </div>
+        <div style="width: 160px; align-self: flex-start;">
+            <div class="hud-label" style="text-align: left;">Stamina</div>
+            <div class="bar-container"><div id="stamina-fill" class="bar-fill"></div></div>
+        </div>
+    </div>
+
+    <div id="touch-controls" class="hidden">
+        <div id="look-zone"></div>
+        <div id="joystick-zone">
+            <div id="joystick-base"></div>
+            <div id="joystick-stick"></div>
+        </div>
+        <div id="btn-flashlight" class="touch-btn">SENTER</div>
+        <div id="btn-interact" class="touch-btn">AKSI</div>
+        <div id="btn-sprint" class="touch-btn">LARI</div>
+    </div>
+
+    <div id="crosshair" class="hidden"></div>
+    <div id="prompt-center" class="hidden">Tekan Tombol AKSI untuk Berinteraksi</div>
+    <div id="notification-area" class="hidden">Baterai +30%</div>
+    
+    <div id="story-popup" class="hidden">
+        <span id="story-popup-text">Isi fragmen cerita...</span>
+        <span class="close-hint">Tekan Tombol AKSI atau ketuk di mana saja untuk menutup catatan ini</span>
+    </div>
+
+    <div id="ending-screen" class="screen hidden">
+        <h1 id="ending-title" class="good-end">GOOD ENDING</h1>
+        <div id="ending-text">Deskripsi akhir cerita...</div>
+        
+        <div id="ending-credits">
+            <p>Game oleh Edward Bruce Wayne (Cuman nama samaran btw) inisial asli MRF</p>
+            <p>Terima kasih kepada Claude dan Gemini yang telah membantu pengembangan game ini</p>
+            <p>Sampai nanti di game berikutnya!</p>
+        </div>
+
+        <button class="btn" id="btn-restart">MAIN LAGI</button>
+    </div>
+
+    <script>
+        // --- LOADING SCREEN LOGIC ---
+        document.addEventListener("DOMContentLoaded", () => {
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('menu-screen').classList.remove('hidden');
+            }, 2500);
+        });
+
+        // --- GAME CONFIG ---
+        const CELL_SIZE = 12;
+        const WALL_HEIGHT = 9;
+        
+        const MAP_GRID = [
+            [1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,1,0,0,0,0,1],
+            [1,0,1,1,1,0,1,0,1,1,0,1],
+            [1,0,1,0,0,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,1,0,1,0,1],
+            [1,0,0,0,1,0,0,1,0,0,0,1],
+            [1,0,0,0,1,0,0,1,0,0,0,1],
+            [1,0,1,0,1,1,1,1,0,1,0,1],
+            [1,0,1,0,0,0,0,0,0,1,0,1],
+            [1,0,1,1,1,0,0,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,2],
+            [1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        // --- CORE VARIABLES ---
+        let scene, camera, renderer, controls;
+        let flashlightGroup; 
+        let gameState = 'MENU'; 
+        let clock = new THREE.Clock();
+        let audioCtx = null;
+        
+        let playerStats = {
+            sanity: 100, battery: 100, stamina: 100,
+            flashlightOn: true, isHiding: false, notesCollected: 0, maxNotes: 3
+        };
+        
+        let walls = [], interactables = [];
+        let exitDoorMesh = null, wardenEntity = null, activeNoteReading = null;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
+        let joystickTouchId = null, lookTouchId = null, lastLookX = 0, lastLookY = 0;
+        let currentLockerObj = null;
+
+        const WAYPOINTS = [
+            {x: 18, z: 18}, {x: 102, z: 18}, {x: 102, z: 102}, {x: 18, z: 102}, {x: 60, z: 60}
+        ];
+        
+        // --- PERUBAHAN KECEPATAN HANTU (CHASE) ---
+        // Kecepatan chase awal 8.2 diturunkan menjadi 6.5 (turun sekitar ~20%)
+        let wardenAI = {
+            currentWaypointIdx: 0, state: 'PATROL', speedPatrol: 4.5, speedChase: 6.5, targetPos: new THREE.Vector3()
+        };
+
+        const STORY_FRAGMENTS = [
+            "Emily - Hari 1: Struktur bangunan tua Ashengate ini jauh lebih teruk daripada yang kubayangkan. Udara di sini berbau besi karat berpadu amonia pekat. Lorong-lorongnya seolah berbisik sengsara. Aku berani sumpah mendengar langkah kaki berat berderap dari lantai atas, padahal tempat ini telah dipaku mati semenjak insiden pembantaian massal pasien tahun 1974...",
+            "Emily - Hari 2: Kamera dokumenterku menangkap siluet janggal berpostur amat tinggi di depan sel kurungan nomor 4. Desas-desus penduduk lokal seputar sosok 'The Warden' ternyata bukan sekadar isapan jempol pengantar tidur. Dia nyata. Dia adalah manifestasi kebencian murni sipir kepala. Aku harus segera mendokumentasikan jalan keluar rahasia di lorong selatan sebelum dia menyadari kehadiranku!",
+            "Catatan Buku Harian Sipir Kepala (Oktober 1968): Hari ini pasien nomor registrasi 102 mencoba melarikan diri lagi lewat barak sanitasi. Prosedur standar isolasi kurungan besi total berdurasi seminggu dan terapi elektrokonvulsif dosis maksimum tampaknya sukses menjinakkan jiwanya yang cacat itu. Mereka menganggapku monster, namun di dalam dinding Ashengate ini, akulah satu-satunya tuhan penentu takdir mereka. Takkan ada yang diizinkan keluar hidup-hidup."
+        ];
+
+        // --- DOM REFERENCES ---
+        const menuScreen = document.getElementById('menu-screen');
+        const introScreen = document.getElementById('intro-screen');
+        const hudLayer = document.getElementById('hud');
+        const touchControls = document.getElementById('touch-controls');
+        const blockerScreen = document.getElementById('blocker');
+        const promptCenter = document.getElementById('prompt-center');
+        const notificationArea = document.getElementById('notification-area');
+        let notifTimeout = null;
+        const crosshair = document.getElementById('crosshair');
+        const storyPopup = document.getElementById('story-popup');
+        const storyPopupText = document.getElementById('story-popup-text');
+        const endingScreen = document.getElementById('ending-screen');
+        const endingTitle = document.getElementById('ending-title');
+        const endingText = document.getElementById('ending-text');
+        const notesCounter = document.getElementById('notes-counter');
+        const sanityFill = document.getElementById('sanity-fill');
+        const batteryFill = document.getElementById('battery-fill');
+        const staminaFill = document.getElementById('stamina-fill');
+        const panelHow = document.getElementById('panel-how');
+        const panelCredits = document.getElementById('panel-credits');
+        const jumpscareOverlay = document.getElementById('jumpscare-overlay');
+
+        // --- AUDIO ---
+        function initAudio() {
+            if (audioCtx) return;
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                let baseOsc = audioCtx.createOscillator();
+                let filter = audioCtx.createBiquadFilter();
+                let baseGain = audioCtx.createGain();
+                
+                baseOsc.type = 'sawtooth';
+                baseOsc.frequency.setValueAtTime(38, audioCtx.currentTime); 
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(90, audioCtx.currentTime);
+                baseGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                
+                baseOsc.connect(filter); filter.connect(baseGain); baseGain.connect(audioCtx.destination);
+                baseOsc.start();
+            } catch (e) {}
+        }
+
+        function playSoundSFX(type) {
+            if (!audioCtx) return;
+            try {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'pickup') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'jumpscare') {
+                    let osc2 = audioCtx.createOscillator(); osc2.connect(gain);
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(65, audioCtx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(320, audioCtx.currentTime + 1.2);
+                    osc2.type = 'square';
+                    osc2.frequency.setValueAtTime(140, audioCtx.currentTime);
+                    osc2.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 1.2);
+                    gain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.4);
+                    osc.start(); osc2.start();
+                    osc.stop(audioCtx.currentTime + 1.4); osc2.stop(audioCtx.currentTime + 1.4);
+                }
+            } catch(err) {}
+        }
+
+        function showNotification(msg) {
+            notificationArea.innerText = msg;
+            notificationArea.classList.remove('hidden');
+            notificationArea.style.opacity = 1;
+            
+            if(notifTimeout) clearTimeout(notifTimeout);
+            
+            notifTimeout = setTimeout(() => {
+                notificationArea.style.opacity = 0;
+                setTimeout(() => notificationArea.classList.add('hidden'), 500);
+            }, 2000);
+        }
+
+        // --- BUTTON EVENTS ---
+        document.getElementById('btn-start').addEventListener('click', () => {
+            initAudio(); playSoundSFX('click');
+            menuScreen.classList.add('hidden'); introScreen.classList.remove('hidden');
+            gameState = 'INTRO';
+        });
+
+        document.getElementById('btn-how').addEventListener('click', () => {
+            playSoundSFX('click');
+            panelHow.classList.toggle('hidden'); panelCredits.classList.add('hidden');
+        });
+
+        document.getElementById('btn-credits').addEventListener('click', () => {
+            playSoundSFX('click');
+            panelCredits.classList.toggle('hidden'); panelHow.classList.add('hidden');
+        });
+
+        document.getElementById('btn-intro-continue').addEventListener('click', () => {
+            playSoundSFX('click');
+            introScreen.classList.add('hidden'); hudLayer.classList.remove('hidden'); crosshair.classList.remove('hidden');
+            touchControls.classList.remove('hidden'); resetTouchInputState();
+            
+            if (!scene) { initEngine3D(); buildAsylumLevel(); } 
+            else { resetGameplayVariables(); }
+            
+            gameState = 'PLAYING'; controls.lock();
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            playSoundSFX('click');
+            endingScreen.classList.add('hidden'); menuScreen.classList.remove('hidden');
+            gameState = 'MENU';
+        });
+
+        // --- ENGINE 3D ---
+        function initEngine3D() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x020202, 0.065);
+
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            camera.rotation.order = 'YXZ';
+            // Objek kontrol ringan pengganti PointerLockControls: menyimpan status "terkunci" yang
+            // sama persis fungsinya (menahan gerakan/pandangan saat baca catatan, jumpscare, ending)
+            // tetapi dikendalikan sepenuhnya oleh tombol sentuh, bukan Pointer Lock API browser.
+            controls = {
+                isLocked: false,
+                _events: { lock: [], unlock: [] },
+                addEventListener(type, cb) { if (this._events[type]) this._events[type].push(cb); },
+                lock() { this.isLocked = true; this._events.lock.forEach(cb => cb()); },
+                unlock() { this.isLocked = false; this._events.unlock.forEach(cb => cb()); }
+            };
+
+            controls.addEventListener('lock', () => {
+                blockerScreen.classList.add('hidden');
+            });
+            controls.addEventListener('unlock', () => {
+                if (gameState === 'PLAYING' && activeNoteReading === null) {
+                    blockerScreen.classList.remove('hidden');
+                }
+            });
+            blockerScreen.addEventListener('click', () => {
+                if (gameState === 'PLAYING' && activeNoteReading === null) controls.lock();
+            });
+
+            camera.position.set(18, 4.5, 18);
+
+            let ambientLight = new THREE.AmbientLight(0x0a0a0c); 
+            scene.add(ambientLight);
+
+            flashlightGroup = new THREE.Group();
+            
+            let flashlight = new THREE.SpotLight(0xfffcd1, 15.0, 80, Math.PI / 5, 0.6, 1.0);
+            flashlight.castShadow = true;
+            flashlight.shadow.mapSize.width = 512;
+            flashlight.shadow.mapSize.height = 512;
+            flashlight.shadow.camera.near = 0.5;
+            flashlight.shadow.camera.far = 50;
+            
+            flashlightGroup.add(flashlight);
+            scene.add(flashlight.target); 
+            flashlightGroup.userData.spotLight = flashlight; 
+
+            let bounceLight = new THREE.PointLight(0xfffcd1, 2.5, 20);
+            flashlightGroup.add(bounceLight);
+
+            camera.add(flashlightGroup);
+            scene.add(camera);
+
+            window.addEventListener('resize', onWindowResize);
+            
+            animateLoop();
+        }
+
+        function resetGameplayVariables() {
+            playerStats.sanity = 100; playerStats.battery = 100; playerStats.stamina = 100;
+            playerStats.flashlightOn = true; playerStats.isHiding = false; playerStats.notesCollected = 0;
+            
+            notesCounter.innerText = "Catatan: 0 / 3";
+            camera.position.set(18, 4.5, 18); camera.rotation.set(0, 0, 0);
+
+            interactables.forEach(item => { item.mesh.visible = true; item.collected = false; });
+            if (exitDoorMesh) exitDoorMesh.material.color.setHex(0x5a0000);
+
+            wardenEntity.position.set(WAYPOINTS[1].x, 2.5, WAYPOINTS[1].z);
+            wardenAI.state = 'PATROL'; wardenAI.currentWaypointIdx = 1;
+            wardenAI.targetPos.set(WAYPOINTS[1].x, 2.5, WAYPOINTS[1].z);
+            
+            currentLockerObj = null; activeNoteReading = null;
+            storyPopup.classList.add('hidden');
+            jumpscareOverlay.style.opacity = 0; jumpscareOverlay.style.display = 'none';
+            flashlightGroup.visible = true;
+            notificationArea.classList.add('hidden');
+        }
+
+        // --- MAP LEVEL ---
+        function buildAsylumLevel() {
+            let wallMat = new THREE.MeshStandardMaterial({ color: 0x2a3236, roughness: 0.9, metalness: 0.1 });
+            let floorMat = new THREE.MeshStandardMaterial({ color: 0x1f2427, roughness: 0.8 });
+            let ceilingMat = new THREE.MeshStandardMaterial({ color: 0x1a1d1f, roughness: 0.95 });
+
+            let wallGeo = new THREE.BoxGeometry(CELL_SIZE, WALL_HEIGHT, CELL_SIZE);
+            let floorGeo = new THREE.PlaneGeometry(CELL_SIZE, CELL_SIZE);
+
+            for (let r = 0; r < MAP_GRID.length; r++) {
+                for (let c = 0; c < MAP_GRID[r].length; c++) {
+                    let posX = c * CELL_SIZE + CELL_SIZE / 2;
+                    let posZ = r * CELL_SIZE + CELL_SIZE / 2;
+
+                    let floorMesh = new THREE.Mesh(floorGeo, floorMat);
+                    floorMesh.rotation.x = -Math.PI / 2; floorMesh.position.set(posX, 0, posZ);
+                    floorMesh.receiveShadow = true; scene.add(floorMesh);
+
+                    let ceilingMesh = new THREE.Mesh(floorGeo, ceilingMat);
+                    ceilingMesh.rotation.x = Math.PI / 2; ceilingMesh.position.set(posX, WALL_HEIGHT, posZ);
+                    scene.add(ceilingMesh);
+
+                    if (MAP_GRID[r][c] === 1) {
+                        let wallMesh = new THREE.Mesh(wallGeo, wallMat);
+                        wallMesh.position.set(posX, WALL_HEIGHT / 2, posZ);
+                        wallMesh.castShadow = true; wallMesh.receiveShadow = true;
+                        scene.add(wallMesh); walls.push(wallMesh);
+                    } else if (MAP_GRID[r][c] === 2) {
+                        let doorGeo = new THREE.BoxGeometry(CELL_SIZE * 0.2, WALL_HEIGHT * 0.9, CELL_SIZE);
+                        let doorMat = new THREE.MeshStandardMaterial({ color: 0x5a0000, roughness: 0.5 });
+                        exitDoorMesh = new THREE.Mesh(doorGeo, doorMat);
+                        exitDoorMesh.position.set(posX - CELL_SIZE/2, WALL_HEIGHT * 0.45, posZ);
+                        scene.add(exitDoorMesh);
+                    }
+                }
+            }
+
+            const notePositions = [
+                {x: 102, z: 18, id: 0}, 
+                {x: 18, z: 102, id: 1}, 
+                {x: 66, z: 102, id: 2} 
+            ];
+            
+            notePositions.forEach((np) => {
+                let tableGeo = new THREE.BoxGeometry(3, 2.5, 3);
+                let tableMat = new THREE.MeshStandardMaterial({ color: 0x2b1e17, roughness: 0.9 });
+                let tableMesh = new THREE.Mesh(tableGeo, tableMat);
+                tableMesh.position.set(np.x, 1.25, np.z); scene.add(tableMesh);
+
+                let paperGeo = new THREE.BoxGeometry(1.2, 0.05, 0.8);
+                let paperMat = new THREE.MeshStandardMaterial({ color: 0xdedac8, roughness: 1.0 });
+                let paperMesh = new THREE.Mesh(paperGeo, paperMat);
+                paperMesh.position.set(np.x, 2.55, np.z); scene.add(paperMesh);
+
+                interactables.push({ type: 'NOTE', id: np.id, mesh: paperMesh, pos: new THREE.Vector3(np.x, 2.55, np.z), collected: false });
+            });
+
+            const batteryPositions = [
+                {x: 42, z: 18},
+                {x: 102, z: 42},
+                {x: 30, z: 78},
+                {x: 102, z: 78},
+                {x: 66, z: 126}
+            ];
+            
+            batteryPositions.forEach((bp, index) => {
+                let batGroup = new THREE.Group();
+                let cylGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.7, 8);
+                let cylMat = new THREE.MeshStandardMaterial({ color: 0xaaaa22, metalness: 0.5, emissive: 0x222200 }); 
+                let cylMesh = new THREE.Mesh(cylGeo, cylMat); batGroup.add(cylMesh);
+                
+                let capGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.1, 8);
+                let capMat = new THREE.MeshStandardMaterial({ color: 0x24a044, emissive: 0x114411 });
+                let capMesh = new THREE.Mesh(capGeo, capMat); capMesh.position.y = 0.38; batGroup.add(capMesh);
+                
+                batGroup.position.set(bp.x, 0.35, bp.z); scene.add(batGroup);
+                interactables.push({ type: 'BATTERY', id: 'bat_' + index, mesh: batGroup, pos: new THREE.Vector3(bp.x, 0.35, bp.z), collected: false });
+            });
+
+            const lockerPositions = [{x: 18, z: 54, rotY: 0}, {x: 102, z: 54, rotY: Math.PI}];
+            lockerPositions.forEach((lp, index) => {
+                let lockerGeo = new THREE.BoxGeometry(3, 7.5, 2.2);
+                let lockerMat = new THREE.MeshStandardMaterial({ color: 0x1c241e, metalness: 0.6, roughness: 0.4 });
+                let lockerMesh = new THREE.Mesh(lockerGeo, lockerMat);
+                lockerMesh.position.set(lp.x, 3.75, lp.z); lockerMesh.rotation.y = lp.rotY; scene.add(lockerMesh);
+                let handGeo = new THREE.BoxGeometry(0.1, 0.6, 0.1);
+                let handMat = new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.9 });
+                let handMesh = new THREE.Mesh(handGeo, handMat); handMesh.position.set(0.6, 0, 1.15); lockerMesh.add(handMesh);
+                interactables.push({ type: 'LOCKER', id: 'lock_' + index, mesh: lockerMesh, pos: new THREE.Vector3(lp.x, 0, lp.z), collected: false });
+            });
+
+            wardenEntity = new THREE.Group();
+            let bodyGeo = new THREE.CylinderGeometry(1.0, 1.6, 6.5, 6);
+            let bodyMat = new THREE.MeshStandardMaterial({ color: 0x030303, roughness: 1.0 });
+            let bodyMesh = new THREE.Mesh(bodyGeo, bodyMat); bodyMesh.position.y = 3.25; wardenEntity.add(bodyMesh);
+
+            let headGeo = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+            let headMesh = new THREE.Mesh(headGeo, bodyMat); headMesh.position.y = 7.0; wardenEntity.add(headMesh);
+
+            let eyeGeo = new THREE.SphereGeometry(0.12, 6, 6);
+            let eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            let leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(0.35, 7.1, -0.72);
+            let rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(-0.35, 7.1, -0.72);
+            wardenEntity.add(leftEye); wardenEntity.add(rightEye);
+
+            wardenEntity.position.set(WAYPOINTS[1].x, 0, WAYPOINTS[1].z); scene.add(wardenEntity);
+            wardenAI.targetPos.set(WAYPOINTS[1].x, 0, WAYPOINTS[1].z);
+        }
+
+        // --- TOUCH CONTROLS (menggantikan keyboard WASD/Shift/E/F & mouse look) ---
+        const lookZone = document.getElementById('look-zone');
+        const joystickZone = document.getElementById('joystick-zone');
+        const joystickStick = document.getElementById('joystick-stick');
+        const btnSprint = document.getElementById('btn-sprint');
+        const btnInteract = document.getElementById('btn-interact');
+        const btnFlashlight = document.getElementById('btn-flashlight');
+
+        const JOYSTICK_MAX_RADIUS = 45;
+        const JOYSTICK_DEADZONE = 0.3;
+        const LOOK_SENSITIVITY = 0.0032;
+        const PITCH_LIMIT = Math.PI / 2 - 0.05;
+        let joystickCenterX = 0, joystickCenterY = 0;
+
+        function resetTouchInputState() {
+            joystickTouchId = null; lookTouchId = null;
+            moveForward = moveBackward = moveLeft = moveRight = false; isSprinting = false;
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+        }
+
+        function updateJoystickVisual(dx, dy) {
+            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+        }
+
+        function applyJoystickVector(clientX, clientY) {
+            let dx = clientX - joystickCenterX;
+            let dy = clientY - joystickCenterY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > JOYSTICK_MAX_RADIUS) {
+                dx = (dx / dist) * JOYSTICK_MAX_RADIUS;
+                dy = (dy / dist) * JOYSTICK_MAX_RADIUS;
+            }
+            updateJoystickVisual(dx, dy);
+            let nx = dx / JOYSTICK_MAX_RADIUS, ny = dy / JOYSTICK_MAX_RADIUS;
+            moveForward = ny < -JOYSTICK_DEADZONE;
+            moveBackward = ny > JOYSTICK_DEADZONE;
+            moveLeft = nx < -JOYSTICK_DEADZONE;
+            moveRight = nx > JOYSTICK_DEADZONE;
+        }
+
+        // Joystick kiri bawah: menggantikan W/A/S/D
+        joystickZone.addEventListener('touchstart', (e) => {
+            if (gameState !== 'PLAYING' || joystickTouchId !== null) return;
+            let touch = e.changedTouches[0];
+            joystickTouchId = touch.identifier;
+            let rect = joystickZone.getBoundingClientRect();
+            joystickCenterX = rect.left + rect.width / 2;
+            joystickCenterY = rect.top + rect.height / 2;
+            applyJoystickVector(touch.clientX, touch.clientY);
+            e.preventDefault();
+        }, { passive: false });
+
+        joystickZone.addEventListener('touchmove', (e) => {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) applyJoystickVector(touch.clientX, touch.clientY);
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        function endJoystickTouch(e) {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === joystickTouchId) {
+                    joystickTouchId = null;
+                    moveForward = moveBackward = moveLeft = moveRight = false;
+                    updateJoystickVisual(0, 0);
+                }
+            }
+            if (e.cancelable) e.preventDefault();
+        }
+        joystickZone.addEventListener('touchend', endJoystickTouch, { passive: false });
+        joystickZone.addEventListener('touchcancel', endJoystickTouch, { passive: false });
+
+        // Drag jari di area kanan layar: menggantikan gerakan mouse untuk arah pandang
+        lookZone.addEventListener('touchstart', (e) => {
+            if (gameState !== 'PLAYING' || lookTouchId !== null) return;
+            let touch = e.changedTouches[0];
+            lookTouchId = touch.identifier;
+            lastLookX = touch.clientX; lastLookY = touch.clientY;
+            e.preventDefault();
+        }, { passive: false });
+
+        lookZone.addEventListener('touchmove', (e) => {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === lookTouchId) {
+                    let dx = touch.clientX - lastLookX, dy = touch.clientY - lastLookY;
+                    lastLookX = touch.clientX; lastLookY = touch.clientY;
+                    if (camera && controls && controls.isLocked) {
+                        camera.rotation.y -= dx * LOOK_SENSITIVITY;
+                        camera.rotation.x -= dy * LOOK_SENSITIVITY;
+                        camera.rotation.x = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, camera.rotation.x));
+                    }
+                }
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        function endLookTouch(e) {
+            for (let touch of e.changedTouches) {
+                if (touch.identifier === lookTouchId) lookTouchId = null;
+            }
+            if (e.cancelable) e.preventDefault();
+        }
+        lookZone.addEventListener('touchend', endLookTouch, { passive: false });
+        lookZone.addEventListener('touchcancel', endLookTouch, { passive: false });
+
+        // Tombol LARI: menggantikan Shift (tahan untuk berlari, mempengaruhi stamina)
+        btnSprint.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (gameState !== 'PLAYING') return;
+            isSprinting = true; btnSprint.classList.add('pressed');
+        }, { passive: false });
+        function releaseSprint(e) {
+            isSprinting = false; btnSprint.classList.remove('pressed');
+            if (e.cancelable) e.preventDefault();
+        }
+        btnSprint.addEventListener('touchend', releaseSprint, { passive: false });
+        btnSprint.addEventListener('touchcancel', releaseSprint, { passive: false });
+
+        // Tombol SENTER: menggantikan tombol F
+        btnFlashlight.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            btnFlashlight.classList.add('pressed');
+            setTimeout(() => btnFlashlight.classList.remove('pressed'), 150);
+            if (gameState !== 'PLAYING' || activeNoteReading !== null) return;
+            playerStats.flashlightOn = !playerStats.flashlightOn;
+            playSoundSFX('click');
+            flashlightGroup.visible = playerStats.flashlightOn;
+        }, { passive: false });
+
+        // Tombol AKSI: menggantikan tombol E (ambil catatan/baterai, buka pintu, masuk/keluar loker,
+        // dan menutup popup catatan yang sedang dibaca)
+        btnInteract.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            btnInteract.classList.add('pressed');
+            setTimeout(() => btnInteract.classList.remove('pressed'), 150);
+            if (gameState !== 'PLAYING') return;
+            if (activeNoteReading !== null) { closeNoteReading(); return; }
+            processInteraction();
+        }, { passive: false });
+
+        function onWindowResize() {
+            if (!camera) return;
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function checkValidMovePosition(targetX, targetZ) {
+            let bufferSpace = 2.0;
+            let checkPoints = [
+                {x: targetX - bufferSpace, z: targetZ - bufferSpace}, {x: targetX + bufferSpace, z: targetZ - bufferSpace},
+                {x: targetX - bufferSpace, z: targetZ + bufferSpace}, {x: targetX + bufferSpace, z: targetZ + bufferSpace}, {x: targetX, z: targetZ}
+            ];
+            for (let p of checkPoints) {
+                let cellC = Math.floor(p.x / CELL_SIZE); let cellR = Math.floor(p.z / CELL_SIZE);
+                if (cellR < 0 || cellR >= MAP_GRID.length || cellC < 0 || cellC >= MAP_GRID[0].length) return false;
+                if (MAP_GRID[cellR][cellC] === 1) return false;
+                if (MAP_GRID[cellR][cellC] === 2 && playerStats.notesCollected < playerStats.maxNotes) return false;
+            }
+            return true;
+        }
+
+        function processInteraction() {
+            if (playerStats.isHiding) {
+                playerStats.isHiding = false;
+                camera.position.add(new THREE.Vector3(0, 0, 4).applyQuaternion(currentLockerObj.mesh.quaternion));
+                camera.position.y = 4.5;
+                currentLockerObj = null; promptCenter.innerText = "";
+                return;
+            }
+            let nearestItem = null; let minDist = 5.0;
+            interactables.forEach(item => {
+                if (item.collected) return;
+                let d = camera.position.distanceTo(item.pos);
+                if (item.type === 'LOCKER') d = new THREE.Vector2(camera.position.x, camera.position.z).distanceTo(new THREE.Vector2(item.pos.x, item.pos.z));
+                if (d < minDist) { minDist = d; nearestItem = item; }
+            });
+            if (!nearestItem) return;
+
+            if (nearestItem.type === 'NOTE') {
+                nearestItem.collected = true; nearestItem.mesh.visible = false; playSoundSFX('pickup');
+                playerStats.notesCollected++;
+                notesCounter.innerText = "Catatan: " + playerStats.notesCollected + " / " + playerStats.maxNotes;
+                if (playerStats.notesCollected === playerStats.maxNotes && exitDoorMesh) exitDoorMesh.material.color.setHex(0x298a43);
+                activeNoteReading = nearestItem.id;
+                storyPopupText.innerHTML = STORY_FRAGMENTS[nearestItem.id];
+                storyPopup.classList.remove('hidden'); controls.unlock();
+            } 
+            else if (nearestItem.type === 'BATTERY') {
+                nearestItem.collected = true; 
+                nearestItem.mesh.visible = false;
+                playSoundSFX('pickup');
+                playerStats.battery = Math.min(100, playerStats.battery + 30);
+                showNotification("Baterai +30%");
+            } 
+            else if (nearestItem.type === 'LOCKER') {
+                playerStats.isHiding = true; currentLockerObj = nearestItem;
+                camera.position.set(nearestItem.pos.x, 4.8, nearestItem.pos.z);
+                camera.rotation.y = nearestItem.mesh.rotation.y;
+                if (wardenAI.state === 'CHASE' && wardenEntity.position.distanceTo(camera.position) > 18) wardenAI.state = 'PATROL';
+            }
+        }
+
+        function closeNoteReading() { activeNoteReading = null; storyPopup.classList.add('hidden'); controls.lock(); }
+        storyPopup.addEventListener('click', () => { if (activeNoteReading !== null) closeNoteReading(); });
+
+        function updateWardenAI(delta, playerPos) {
+            if (!wardenEntity) return;
+            let distToPlayer = wardenEntity.position.distanceTo(playerPos);
+            
+            if (playerStats.isHiding) {
+                if (distToPlayer < 6.0) { triggerJumpscareSequence(); return; }
+                wardenAI.state = 'PATROL';
+            } else {
+                if (distToPlayer < 28.0) {
+                    if (playerStats.flashlightOn || distToPlayer < 18.0) wardenAI.state = 'CHASE';
+                }
+            }
+
+            let moveSpeed = (wardenAI.state === 'CHASE') ? wardenAI.speedChase : wardenAI.speedPatrol;
+            let currentTarget = new THREE.Vector3();
+
+            if (wardenAI.state === 'CHASE') {
+                currentTarget.set(playerPos.x, 0, playerPos.z);
+            } else {
+                let wp = WAYPOINTS[wardenAI.currentWaypointIdx];
+                currentTarget.set(wp.x, 0, wp.z);
+                if (wardenEntity.position.distanceTo(currentTarget) < 1.5) {
+                    wardenAI.currentWaypointIdx = Math.floor(Math.random() * WAYPOINTS.length);
+                }
+            }
+
+            let dir = new THREE.Vector3().subVectors(currentTarget, wardenEntity.position).normalize();
+            wardenEntity.position.add(dir.multiplyScalar(moveSpeed * delta));
+            wardenEntity.position.y = 0;
+
+            if (dir.lengthSq() > 0.001) {
+                let angle = Math.atan2(-dir.x, -dir.z);
+                wardenEntity.rotation.y = angle;
+            }
+            if (distToPlayer < 2.5 && !playerStats.isHiding) triggerJumpscareSequence();
+        }
+
+        function triggerJumpscareSequence() {
+            gameState = 'JUMPSCARE'; controls.unlock(); playSoundSFX('jumpscare');
+            jumpscareOverlay.style.display = 'block'; jumpscareOverlay.style.opacity = '1';
+            camera.lookAt(wardenEntity.position);
+            setTimeout(() => { triggerFinalEndingScreen('MADNESS'); }, 1600);
+        }
+
+        function triggerFinalEndingScreen(type) {
+            gameState = 'ENDING'; controls.unlock(); hudLayer.classList.add('hidden');
+            crosshair.classList.add('hidden'); promptCenter.classList.add('hidden');
+            touchControls.classList.add('hidden');
+            endingScreen.classList.remove('hidden');
+
+            if (type === 'FREEDOM') {
+                endingTitle.innerText = "GOOD ENDING: FREEDOM"; endingTitle.className = "good-end";
+                endingText.innerHTML = "Arthur berhasil melarikan diri meninggalkan kegelapan Ashengate Asylum, bersama liontin perak Emily. Misteri apakah adiknya selamat akan terus menghantui.";
+            } else {
+                endingTitle.innerText = "BAD ENDING: LOST IN MADNESS"; endingTitle.className = "bad-end";
+                if (playerStats.sanity <= 0) endingText.innerHTML = "Kegelapan mengikis kewarasanmu... Arthur menjadi penghuni abadi Asylum berikutnya.";
+                else endingText.innerHTML = "Tertangkap The Warden. Arthur menghilang tanpa jejak menyusul nasib tragis adiknya.";
+            }
+        }
+
+        function animateLoop() {
+            requestAnimationFrame(animateLoop);
+            if (gameState !== 'PLAYING') {
+                if (renderer && scene && camera) renderer.render(scene, camera);
+                return;
+            }
+            let delta = clock.getDelta(); if (delta > 0.1) delta = 0.1;
+            let playerPos = camera.position;
+
+            let lookPromptText = ""; let currentMinDist = 5.0;
+            interactables.forEach(item => {
+                if (item.collected) return;
+                let dist = playerPos.distanceTo(item.pos);
+                if (item.type === 'LOCKER') dist = new THREE.Vector2(playerPos.x, playerPos.z).distanceTo(new THREE.Vector2(item.pos.x, item.pos.z));
+                if (dist < currentMinDist) {
+                    currentMinDist = dist;
+                    if (item.type === 'NOTE') lookPromptText = "Tekan AKSI untuk Membaca Catatan";
+                    if (item.type === 'BATTERY') lookPromptText = "Tekan AKSI untuk Mengambil Baterai";
+                    if (item.type === 'LOCKER') lookPromptText = playerStats.isHiding ? "Tekan AKSI untuk Keluar" : "Tekan AKSI untuk Sembunyi";
+                }
+            });
+
+            let currentCellC = Math.floor(playerPos.x / CELL_SIZE), currentCellR = Math.floor(playerPos.z / CELL_SIZE);
+            if (currentCellR >= 0 && currentCellR < MAP_GRID.length && currentCellC >= 0 && currentCellC < MAP_GRID[0].length) {
+                if (currentCellR === 10 && currentCellC === 10) {
+                    if (playerStats.notesCollected >= playerStats.maxNotes) { triggerFinalEndingScreen('FREEDOM'); return; }
+                    else { lookPromptText = "Terkunci. Butuh seluruh 3 catatan."; }
+                }
+            }
+            promptCenter.innerText = lookPromptText;
+            lookPromptText !== "" ? promptCenter.classList.remove('hidden') : promptCenter.classList.add('hidden');
+
+            if (!playerStats.isHiding && controls.isLocked) {
+                let baseSpeed = 12.0;
+                if (isSprinting && playerStats.stamina > 0 && (moveForward || moveBackward || moveLeft || moveRight)) {
+                    baseSpeed = 22.0; playerStats.stamina = Math.max(0, playerStats.stamina - delta * 36);
+                } else {
+                    playerStats.stamina = Math.min(100, playerStats.stamina + delta * 14);
+                }
+
+                let moveDistance = baseSpeed * delta;
+                let forwardVector = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                let rightVector = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                forwardVector.y = 0; forwardVector.normalize(); rightVector.y = 0; rightVector.normalize();
+
+                let wishMoveDir = new THREE.Vector3(0,0,0);
+                if (moveForward) wishMoveDir.add(forwardVector);
+                if (moveBackward) wishMoveDir.sub(forwardVector);
+                if (moveRight) wishMoveDir.add(rightVector);
+                if (moveLeft) wishMoveDir.sub(rightVector);
+                wishMoveDir.normalize();
+
+                if (wishMoveDir.lengthSq() > 0.001) {
+                    let nextX = camera.position.x + wishMoveDir.x * moveDistance;
+                    let nextZ = camera.position.z + wishMoveDir.z * moveDistance;
+                    if (checkValidMovePosition(nextX, camera.position.z)) camera.position.x = nextX;
+                    if (checkValidMovePosition(camera.position.x, nextZ)) camera.position.z = nextZ;
+                }
+            }
+
+            if (flashlightGroup && flashlightGroup.userData.spotLight) {
+                let spotLight = flashlightGroup.userData.spotLight;
+                let dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                spotLight.target.position.copy(camera.position).add(dir);
+            }
+
+            if (playerStats.flashlightOn) {
+                playerStats.battery = Math.max(0, playerStats.battery - delta * 1.6);
+                if (playerStats.battery <= 0) {
+                    playerStats.flashlightOn = false; flashlightGroup.visible = false;
+                }
+            }
+
+            let sanityDrainRate = 0.4; 
+            if (!playerStats.flashlightOn) sanityDrainRate += 2.2; 
+            let wardenDist = wardenEntity.position.distanceTo(playerPos);
+            if (wardenDist < 30.0 && !playerStats.isHiding) sanityDrainRate += (30.0 - wardenDist) * 1.5;
+            
+            playerStats.sanity = Math.max(0, playerStats.sanity - delta * sanityDrainRate);
+
+            if (playerStats.sanity < 40) {
+                let blurAmount = (40 - playerStats.sanity) / 20, grScale = (40 - playerStats.sanity) / 40;
+                document.body.style.filter = `blur(${blurAmount}px) grayscale(${grScale})`;
+                document.getElementById('vignette-overlay').style.boxShadow = `inset 0 0 ${100 + (40 - playerStats.sanity)*3}px rgba(139,0,0,0.85)`;
+            } else {
+                document.body.style.filter = "none";
+                document.getElementById('vignette-overlay').style.boxShadow = "inset 0 0 100px rgba(0,0,0,0.92)";
+            }
+
+            if (playerStats.sanity <= 0) { triggerFinalEndingScreen('MADNESS'); return; }
+
+            sanityFill.style.width = playerStats.sanity + "%";
+            batteryFill.style.width = playerStats.battery + "%";
+            staminaFill.style.width = playerStats.stamina + "%";
+
+            updateWardenAI(delta, playerPos);
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
